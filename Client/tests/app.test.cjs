@@ -251,3 +251,14 @@ test('루틴은 빠른 시간순으로 표시하고 같은 시간은 등록 순�
   assert.equal(app.run("validTime('24:00')"), false);
   assert.equal(app.run("validTime('07:30')"), true);
 });
+
+
+test('캘린더는 다섯 항목과 나머지 개수를 표시한다', () => {
+  const app = startApp();
+  app.run("change(s => { for (let i=1;i<=6;i++) s.todos.push({id:String(i),name:'항목'+i,date:'2026-11-16',time:'12:00',color:'#123456'}); }); page='calendar'; render();");
+  assert.match(app.html(), /항목5/);
+  assert.doesNotMatch(app.html(), /항목6/);
+  assert.match(app.html(), /\+1개/);
+  app.run("selected='2026-11-16'; render()");
+  assert.match(app.html(), /항목6/);
+});
