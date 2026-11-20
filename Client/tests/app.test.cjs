@@ -15,6 +15,7 @@ function startApp(time = '2026-11-16T09:00:00', stored = {}) {
     innerHTML: '', className: '', textContent: '',
     addEventListener() {}, showModal() {}, close() {},
     querySelector() { return this.error ||= element(); },
+    querySelectorAll() { return []; },
   });
   const document = {
     querySelector(selector) {
@@ -36,7 +37,13 @@ function startApp(time = '2026-11-16T09:00:00', stored = {}) {
         stored[key] = value;
       },
     },
-    window: { addEventListener() {} }, navigator: {}, setInterval() {},
+    window: { addEventListener() {}, confirm: () => true }, navigator: {}, setInterval() {},
+    FormData: class {
+      constructor(form) { this.values = form.testValues; }
+      get(name) { return this.values[name] ?? null; }
+      getAll(name) { return this.values[name] ?? []; }
+      has(name) { return name in this.values; }
+    },
   });
   vm.runInContext(source, context);
   return {
@@ -46,6 +53,7 @@ function startApp(time = '2026-11-16T09:00:00', stored = {}) {
     setTime: value => { now = new Date(value).getTime(); },
     failWrites: () => { failWrites = true; },
     stored,
+    form: () => document.querySelector('#form'),
   };
 }
 
@@ -68,6 +76,40 @@ test('요일에 맞는 루틴을 등록 순서로 표시하고 완료를 날짜�
   app.run("complete('routine','a')");
   assert.equal(app.state().rewards.length, 2);
   assert.equal(app.state().food, 1);
+});
+
+test('여러 날 일정을 수정하면 ID가 유지되고 새 기간에 표시된다', () => {
+  const app = startApp();
+  app.run("change(s=>s.events.push({id:'e',name:'기존',color:'#123456',startDate:'2026-11-30',endDate:'2026-12-02',allDay:true}));page='calendar';selected='2026-12-01';openEditor('event','e')");
+  assert.match(app.form().innerHTML, /value="2026-11-30"/);
+  app.form().testValues = {name:'변경', color:'#123456', startDate:'2026-12-04', endDate:'2026-12-05', allDay:'on'};
+  app.form().onsubmit({preventDefault() {}});
+  assert.equal(app.state().events.length, 1);
+  assert.equal(app.state().events[0].id, 'e');
+  assert.equal(app.state().events[0].startDate, '2026-12-04');
+  assert.equal(app.run("eventOnDate(state.events[0],'2026-12-01')"), false);
+  assert.equal(app.run("eventOnDate(state.events[0],'2026-12-05')"), true);
+});
+
+test('잘못된 일정 기간은 저장하지 않고 입력 화면에 오류를 표시한다', () => {
+  const app = startApp();
+  app.run("change(s=>s.events.push({id:'e',name:'기존',color:'#123456',startDate:'2026-11-16',endDate:'2026-11-16',allDay:true}));openEditor('event','e')");
+  app.form().testValues = {name:'변경', color:'#123456', startDate:'2026-11-16', endDate:'2026-11-16', startTime:'15:00', endTime:'15:00'};
+  app.form().onsubmit({preventDefault() {}});
+  assert.equal(app.state().events[0].name, '기존');
+  assert.match(app.form().querySelector('#error').textContent, /확인/);
+});
+
+test('일정 삭제는 저장 실패 시 보존하고 성공 시 전체 기간에서 제거한다', () => {
+  const app = startApp();
+  app.run("change(s=>s.events.push({id:'e',name:'약속',color:'#123456',startDate:'2026-11-30',endDate:'2026-12-02',allDay:true}));deleteItem('event','e')");
+  assert.equal(app.state().events.length, 0);
+  const failed = startApp();
+  failed.run("change(s=>s.events.push({id:'e',name:'약속',color:'#123456',startDate:'2026-11-30',endDate:'2026-12-02',allDay:true}));");
+  failed.failWrites();
+  failed.run("page='calendar';deleteItem('event','e')");
+  assert.equal(failed.state().events.length, 1);
+  assert.match(failed.html(), /저장하지 못했습니다/);
 });
 
 for (const [label, time, earnsReward] of [
