@@ -42,14 +42,14 @@ function render() {
  for(let d=1;d<=count;d++){const key=dateKey(new Date(y,m,d)), entries=state.todos.filter(t=>t.date===key), events=state.events.filter(event=>eventOnDate(event,key));cells+='<button class="day '+(key===selected?'selected':'')+'" data-date="'+key+'"><span>'+d+'</span>'+entries.map(t=>'<small style="color:'+esc(t.color)+'">할 일 '+esc(t.name)+'</small>').join('')+events.map(event=>'<small style="color:'+esc(event.color)+'">일정 '+esc(event.name)+'</small>').join('')+'</button>';}
  const chosen=state.todos.filter(t=>t.date===selected).sort((a,b)=>a.time.localeCompare(b.time));
  const events=state.events.filter(event=>eventOnDate(event,selected));
- const eventList=events.map(event=>'<div class="item"><span class="dot" style="background:'+esc(event.color)+'"></span><div class="itemtext">일정 · '+esc(event.name)+'<div class="muted">'+(event.allDay?'종일':esc(event.startDate+' '+event.startTime+' ~ '+event.endDate+' '+event.endTime))+'</div></div></div>').join('');
+ const eventList=events.map(event=>'<div class="item"><span class="dot" style="background:'+esc(event.color)+'"></span><div class="itemtext">일정 · '+esc(event.name)+'<div class="muted">'+(event.allDay?'종일':esc(event.startDate+' '+event.startTime+' ~ '+event.endDate+' '+event.endTime))+'</div></div><button class="item-action" data-edit="event" data-id="'+esc(event.id)+'" aria-label="'+esc(event.name)+' 수정">수정</button><button class="item-action" data-delete="event" data-id="'+esc(event.id)+'" aria-label="'+esc(event.name)+' 삭제">삭제</button></div>').join('');
  app.innerHTML='<div class="topline"><span class="display">MY LITTLE DIARY</span><span>♡</span></div><h1>캘린더</h1>'+(message?'<p class="notice" role="status">'+esc(message)+'</p>':'')+'<section class="panel"><div class="calendar-head"><button id="prev" aria-label="이전 달">‹</button><h2>'+y+'년 '+(m+1)+'월</h2><button id="next" aria-label="다음 달">›</button></div><div class="grid">'+['일','월','화','수','목','금','토'].map(d=>'<div class="weekday">'+d+'</div>').join('')+cells+'</div></section><section class="panel details"><div class="sectionhead"><h2>'+selected.slice(5).replace('-','월 ')+'일</h2><div><button id="addTodo" class="primary">+ 할 일</button> <button id="addEvent" class="primary">+ 일정</button></div></div>'+eventList+items(chosen,'todo')+'</section>';
 }
 function openForm(type) { const routine=type==='routine'; form.innerHTML='<h2>'+(routine?'루틴 추가':'할 일 추가')+'</h2><label for="name">'+(routine?'루틴 내용':'할 일 이름')+'</label><input id="name" name="name" type="text" maxlength="100" required>'+(routine?'<label for="when">시간 또는 원하는 말</label><input id="when" name="when" type="text" placeholder="07:30 또는 아침 먹고" maxlength="60" required><label>반복 요일</label><div class="days">'+['일','월','화','수','목','금','토'].map((d,i)=>'<label><input type="checkbox" name="days" value="'+i+'"><span>'+d+'</span></label>').join('')+'</div>':'<label for="date">마감일</label><input id="date" name="date" type="date" value="'+selected+'" required><label for="time">마감 시간</label><input id="time" name="time" type="time" required><label for="color">색상</label><input id="color" name="color" type="color" value="#d84d79">')+'<p id="error" class="error"></p><div class="actions"><button class="secondary" type="button" id="cancel">취소</button><button class="primary" type="submit">저장</button></div>';
  form.onsubmit=e=>{e.preventDefault();const data=new FormData(form),name=String(data.get('name')).trim();if(!name){form.querySelector('#error').textContent='내용을 입력해 주세요.';return;}if(routine){const days=data.getAll('days').map(Number),when=String(data.get('when')).trim();if(!when||!days.length){form.querySelector('#error').textContent='시간 또는 문구와 반복 요일을 입력해 주세요.';return;}if(change(s=>s.routines.push({id:crypto.randomUUID(),name,when,days})))dialog.close();}else{const date=String(data.get('date')),time=String(data.get('time')),color=String(data.get('color'));if(change(s=>s.todos.push({id:crypto.randomUUID(),name,date,time,color,completedAt:null})))dialog.close();}render();}; dialog.showModal(); }
 function openEditor(type, id) {
  const isEvent = type === 'event', isRoutine = type === 'routine';
- const collection = isRoutine ? 'routines' : 'todos';
+ const collection = isEvent ? 'events' : isRoutine ? 'routines' : 'todos';
  const item = id ? state[collection].find(entry => entry.id === id) : null;
  if (id && !item) return;
  const field = (label, name, inputType, value, extra = '') => '<label for="edit-'+name+'">'+label+'</label><input id="edit-'+name+'" name="'+name+'" type="'+inputType+'" value="'+esc(value || '')+'" '+extra+'>';
@@ -58,13 +58,14 @@ function openEditor(type, id) {
   fields += field('시간 또는 원하는 말','when','text',item.when,'required maxlength="60"');
   fields += '<label>반복 요일</label><div class="days">'+['일','월','화','수','목','금','토'].map((day,index)=>'<label><input type="checkbox" name="days" value="'+index+'" '+(item.days.includes(index)?'checked':'')+'><span>'+day+'</span></label>').join('')+'</div>';
  } else if (isEvent) {
-  fields += field('시작일','startDate','date',selected,'required') + field('종료일','endDate','date',selected,'required');
-  fields += '<label><input type="checkbox" name="allDay" checked> 종일</label><div id="event-times" hidden>'+field('시작 시간','startTime','time','')+field('종료 시간','endTime','time','')+'</div>';
-  fields += field('색상','color','color','#d84d79');
+  const allDay = item ? item.allDay : true;
+  fields += field('시작일','startDate','date',item?.startDate || selected,'required') + field('종료일','endDate','date',item?.endDate || selected,'required');
+  fields += '<label><input type="checkbox" name="allDay" '+(allDay?'checked':'')+'> 종일</label><div id="event-times" '+(allDay?'hidden':'')+'>'+field('시작 시간','startTime','time',item?.startTime,allDay?'':'required')+field('종료 시간','endTime','time',item?.endTime,allDay?'':'required')+'</div>';
+  fields += field('색상','color','color',item?.color || '#d84d79');
  } else {
   fields += field('마감일','date','date',item.date,'required') + field('마감 시간','time','time',item.time,'required') + field('색상','color','color',item.color);
  }
- form.innerHTML='<h2>'+(isEvent?'일정 추가':isRoutine?'루틴 수정':'할 일 수정')+'</h2>'+fields+'<p id="error" class="error"></p><div class="actions"><button class="secondary" type="button" id="cancel">취소</button><button class="primary" type="submit">저장</button></div>';
+ form.innerHTML='<h2>'+(isEvent?(id?'일정 수정':'일정 추가'):isRoutine?'루틴 수정':'할 일 수정')+'</h2>'+fields+'<p id="error" class="error"></p><div class="actions"><button class="secondary" type="button" id="cancel">취소</button><button class="primary" type="submit">저장</button></div>';
  if (isEvent) {
   const allDay=form.querySelector('[name="allDay"]'), times=form.querySelector('#event-times');
   allDay.addEventListener('change',()=>{times.hidden=allDay.checked;times.querySelectorAll('input').forEach(input=>input.required=!allDay.checked);});
@@ -81,16 +82,16 @@ function openEditor(type, id) {
   } else if (isEvent) {
    const startDate=String(data.get('startDate') || ''), endDate=String(data.get('endDate') || ''), allDay=data.has('allDay'), startTime=String(data.get('startTime') || ''), endTime=String(data.get('endTime') || '');
    if (!startDate || !endDate || endDate<startDate || (!allDay && (!startTime || !endTime || endDate+'T'+endTime<=startDate+'T'+startTime))) {error.textContent='종료 날짜와 시간을 확인해 주세요.';return;}
-   values={id:crypto.randomUUID(),name,color:String(data.get('color')),startDate,endDate,allDay,startTime,endTime};
+   values={name,color:String(data.get('color')),startDate,endDate,allDay,startTime,endTime};
   } else values={name,date:String(data.get('date')),time:String(data.get('time')),color:String(data.get('color'))};
   if (id && !state[collection].some(entry=>entry.id===id)) {error.textContent='이미 삭제된 항목입니다.';return;}
-  const saved=change(next=>{if(isEvent) next.events.push(values); else Object.assign(next[collection].find(entry=>entry.id===id),values);});
+  const saved=change(next=>{if(isEvent && !id) next.events.push({id:crypto.randomUUID(),...values}); else Object.assign(next[collection].find(entry=>entry.id===id),values);});
   if (saved) {dialog.close();message='';render();} else error.textContent=message;
  };
  dialog.showModal();
 }
 function deleteItem(type,id) {
- const collection=type==='routine'?'routines':'todos', item=state[collection].find(entry=>entry.id===id);
+ const collection=type==='routine'?'routines':type==='event'?'events':'todos', item=state[collection].find(entry=>entry.id===id);
  if (!item || !window.confirm('“'+item.name+'” 항목을 삭제할까요?')) return;
  message='';
  change(next=>{next[collection]=next[collection].filter(entry=>entry.id!==id);});
