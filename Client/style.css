@@ -16,6 +16,7 @@
 .day > span { display: block; text-align: center; margin-bottom: 5px; }
 .day small {
   display: -webkit-box;
+  flex: none;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   white-space: normal;
