@@ -1,5 +1,9 @@
 # Karpathy Guidelines
 
+## Feature delivery and merge approval
+
+Implement changes on a feature or fix branch and commit the implementation. Add the relevant tests in a separate commit. Provide the user a local preview link and let them test the feature. Merge into main only after the user explicitly approves the merge following their test. Run the full test suite and wait for PR checks before merging. Keep the pull request open while awaiting approval.
+
 ## Test failure review
 
 If a test fails during development or in a pull request, investigate the failure and explain its cause, the affected behavior, and the proposed correction to the user. Wait for the user's review before changing code or tests in response to that failure. After approval, make the correction and rerun the relevant tests and the full suite.
