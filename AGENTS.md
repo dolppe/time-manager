@@ -1,5 +1,9 @@
 # Karpathy Guidelines
 
+## Test failure review
+
+If a test fails during development or in a pull request, investigate the failure and explain its cause, the affected behavior, and the proposed correction to the user. Wait for the user's review before changing code or tests in response to that failure. After approval, make the correction and rerun the relevant tests and the full suite.
+
 Behavioral guidelines to reduce common LLM coding mistakes, derived from [Andrej Karpathy's observations](https://x.com/karpathy/status/2015883857489522876) on LLM coding pitfalls.
 
 **Tradeoff:** These guidelines bias toward caution over speed. For trivial tasks, use judgment.
