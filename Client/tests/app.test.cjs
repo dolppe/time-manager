@@ -57,9 +57,9 @@ function startApp(time = '2026-11-16T09:00:00', stored = {}) {
   };
 }
 
-test('요일에 맞는 루틴을 등록 순서로 표시하고 완료를 날짜별로 기록한다', () => {
+test('요일에 맞는 같은 시간 루틴을 등록 순서로 표시하고 완료를 날짜별로 기록한다', () => {
   const app = startApp(); // 월요일
-  app.run("change(s => s.routines.push({id:'a',name:'먼저',when:'저녁',days:[1,3,5]}, {id:'b',name:'나중',when:'아침',days:[1]}, {id:'c',name:'화요일',when:'아침',days:[2]})); render();");
+  app.run("change(s => s.routines.push({id:'a',name:'먼저',when:'08:00',days:[1,3,5]}, {id:'b',name:'나중',when:'08:00',days:[1]}, {id:'c',name:'화요일',when:'08:00',days:[2]})); render();");
   assert.ok(app.html().indexOf('먼저') < app.html().indexOf('나중'));
   assert.doesNotMatch(app.html(), /화요일/);
   app.run("complete('routine','a'); complete('routine','a');");
@@ -141,7 +141,7 @@ test('할 일은 마감순으로 표시하고 지난 날짜는 달력에 보관�
 
 test('알 획득, 부화, 먹이 주기와 새로고침 후 복원을 확인한다', () => {
   const app = startApp();
-  app.run("change(s=>s.routines.push({id:'a',name:'운동',when:'아침',days:[1]})); complete('routine','a'); feed();");
+  app.run("change(s=>s.routines.push({id:'a',name:'운동',when:'08:00',days:[1]})); complete('routine','a'); feed();");
   assert.equal(app.state().pet, 'egg');
   assert.equal(app.state().food, 0);
   app.run("change(s=>s.todos.push({id:'t',name:'할 일',date:'2026-11-17',time:'10:00',color:'#d84d79'})); complete('todo','t'); feed();");
@@ -156,7 +156,7 @@ test('알 획득, 부화, 먹이 주기와 새로고침 후 복원을 확인한�
 
 test('저장 실패 시 완료와 보상이 둘 다 반영되지 않는다', () => {
   const app = startApp();
-  app.run("change(s=>s.routines.push({id:'a',name:'운동',when:'아침',days:[1]}))");
+  app.run("change(s=>s.routines.push({id:'a',name:'운동',when:'08:00',days:[1]}))");
   const before = app.stored['time-manager-v1'];
   app.failWrites();
   app.run("complete('routine','a')");
@@ -167,7 +167,7 @@ test('저장 실패 시 완료와 보상이 둘 다 반영되지 않는다', () 
 
 test('사용자 입력의 HTML 특수 문자를 화면에 안전하게 표시한다', () => {
   const app = startApp();
-  app.run("change(s=>s.routines.push({id:'a',name:'<img onerror=alert(1)>',when:'아침',days:[1]})); render();");
+  app.run("change(s=>s.routines.push({id:'a',name:'<img onerror=alert(1)>',when:'08:00',days:[1]})); render();");
   assert.match(app.html(), /&lt;img onerror=alert\(1\)&gt;/);
   assert.doesNotMatch(app.html(), /<img onerror/);
 });
@@ -191,7 +191,7 @@ test('시간 지정 일정의 자정 종료와 종일 일정의 종료일을 구
 
 test('완료를 취소하고 다시 완료해도 기존 보상을 중복 지급하지 않는다', () => {
   const app = startApp();
-  app.run("change(s=>{s.routines.push({id:'a',name:'루틴',when:'아침',days:[1]});s.todos.push({id:'t',name:'할 일',date:'2026-11-17',time:'10:00',color:'#d84d79'});}); complete('routine','a');complete('todo','t');feed();toggleComplete('routine','a');toggleComplete('todo','t');");
+  app.run("change(s=>{s.routines.push({id:'a',name:'루틴',when:'08:00',days:[1]});s.todos.push({id:'t',name:'할 일',date:'2026-11-17',time:'10:00',color:'#d84d79'});}); complete('routine','a');complete('todo','t');feed();toggleComplete('routine','a');toggleComplete('todo','t');");
   assert.equal(app.state().completions.length, 0);
   assert.equal(app.state().todos[0].completedAt, null);
   app.run("toggleComplete('routine','a');toggleComplete('todo','t');");
@@ -202,7 +202,7 @@ test('완료를 취소하고 다시 완료해도 기존 보상을 중복 지급�
 
 test('완료 취소 저장 실패 시 완료와 보상을 유지한다', () => {
   const app = startApp();
-  app.run("change(s=>s.routines.push({id:'a',name:'운동',when:'아침',days:[1]}));complete('routine','a');");
+  app.run("change(s=>s.routines.push({id:'a',name:'운동',when:'08:00',days:[1]}));complete('routine','a');");
   const before = app.stored['time-manager-v1'];
   app.failWrites();
   app.run("toggleComplete('routine','a')");
@@ -229,4 +229,36 @@ test('먹이 다섯 번째에 성장하고 기존 기록과 저장 실패를 보
   assert.equal(failed.state().fed, 4);
   assert.equal(failed.state().food, 1);
   assert.match(failed.html(), /저장하지 못했습니다/);
+});
+
+
+test('기존 문구 루틴만 삭제하고 완료와 보상 데이터를 보존한다', () => {
+  const original = {routines:[{id:'old', name:'문구', when:'아침', days:[1]}, {id:'valid', name:'시간', when:'07:30', days:[1]}], todos:[], events:[], completions:['old:2026-11-16','valid:2026-11-16'], rewards:['routine:old:2026-11-16'], food:2, pet:'hatched', fed:3};
+  const stored = {'time-manager-v1':JSON.stringify(original)};
+  const app = startApp(undefined, stored);
+  assert.deepEqual(app.state().routines.map(r => r.id), ['valid']);
+  assert.deepEqual(app.state().completions, ['valid:2026-11-16']);
+  assert.equal(app.state().rewards.length, 1);
+  assert.equal(app.state().fed, 3);
+  assert.equal(startApp(undefined, stored).state().routines.length, 1);
+});
+
+test('루틴은 빠른 시간순으로 표시하고 같은 시간은 등록 순서를 유지한다', () => {
+  const app = startApp();
+  app.run("change(s=>s.routines.push({id:'a',name:'늦게',when:'18:00',days:[1]}, {id:'b',name:'첫번째',when:'07:30',days:[1]}, {id:'c',name:'두번째',when:'07:30',days:[1]}));render()");
+  assert.ok(app.html().indexOf('첫번째') < app.html().indexOf('두번째'));
+  assert.ok(app.html().indexOf('두번째') < app.html().indexOf('늦게'));
+  assert.equal(app.run("validTime('24:00')"), false);
+  assert.equal(app.run("validTime('07:30')"), true);
+});
+
+
+test('캘린더는 다섯 항목과 나머지 개수를 표시한다', () => {
+  const app = startApp();
+  app.run("change(s => { for (let i=1;i<=6;i++) s.todos.push({id:String(i),name:'항목'+i,date:'2026-11-16',time:'12:00',color:'#123456'}); }); page='calendar'; render();");
+  assert.match(app.html(), /항목5/);
+  assert.doesNotMatch(app.html(), /항목6/);
+  assert.match(app.html(), /\+1개/);
+  app.run("selected='2026-11-16'; render()");
+  assert.match(app.html(), /항목6/);
 });

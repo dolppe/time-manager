@@ -1,2 +1,33 @@
 *{box-sizing:border-box}body{margin:0;background:#fff5f6;color:var(--color-text);font-family:var(--font-body);font-size:16px}button,input{font:inherit}button{cursor:pointer}main{max-width:640px;margin:auto;padding:22px 18px 100px}h1,h2,h3,.display,nav,button{font-family:var(--font-title)}h1{font-size:2rem;margin:8px 0 14px}h2{font-size:1.45rem;margin:0}p{line-height:1.5}.topline{display:flex;align-items:center;justify-content:space-between;color:#a84666}.hero{background:#c9eafa;border:3px solid white;border-radius:28px;padding:16px;display:flex;align-items:center;gap:15px;min-height:180px;box-shadow:0 4px 0 #f2cbd6}.hero img{width:45%;max-width:190px;height:155px;object-fit:contain}.hero div{flex:1}.hero p{font-size:.93rem}.badge{background:white;border-radius:30px;padding:7px 12px;display:inline-block}.tabs{display:flex;background:#f8dce5;border-radius:18px;padding:5px;margin:22px 0}.tabs button{width:50%;border:0;background:transparent;padding:12px;border-radius:14px;color:#865a61}.tabs button.active{background:#fff;box-shadow:0 2px 7px #dbb4c1;color:#a12450}.panel{background:#fffdf8;border:2px solid #f4d4df;border-radius:24px;padding:20px;box-shadow:0 4px 0 #f5dce3}.sectionhead{display:flex;align-items:center;justify-content:space-between;gap:10px}.primary{border:0;border-radius:16px;background:#e96c98;color:white;padding:10px 16px}.item{display:flex;align-items:center;gap:12px;padding:15px 0;border-bottom:1px solid #f5dfe5}.item:last-child{border-bottom:0}.item button{flex:none;width:28px;height:28px;border:2px solid #e66d92;border-radius:8px;background:white;color:white;padding:0}.item.done button{background:#a7a0a0;border-color:#a7a0a0}.item.done .itemtext{text-decoration:line-through;color:#888}.itemtext{flex:1;overflow-wrap:anywhere}.muted{color:#866f73;font-size:.9rem}.dot{width:10px;height:10px;border-radius:50%;flex:none}.empty{color:#927a7c;text-align:center;padding:20px 0}.calendar-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}.calendar-head button{background:#f8dce5;border:0;border-radius:12px;padding:8px 16px}.grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}.weekday{text-align:center;color:#a67480;font-size:.85rem}.day{min-width:0;min-height:68px;border:0;background:#fff7f8;border-radius:10px;padding:5px;text-align:left;overflow:hidden}.day.selected{outline:2px solid #e96c98;background:#fff0f5}.day small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:.65rem}.day.blank{background:transparent}.details{margin-top:18px}nav{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:center;gap:12px;padding:12px 15px calc(12px + env(safe-area-inset-bottom));background:#fffaf7eF;border-top:1px solid #f3d6df}nav button{width:min(45%,250px);border:0;border-radius:15px;background:transparent;color:#977c80;padding:12px}nav button.active{background:#ffe1ec;color:#a72f5a}dialog{border:0;border-radius:24px;padding:0;max-width:440px;width:calc(100% - 32px);color:var(--color-text)}dialog::backdrop{background:#4c293c80}form{padding:22px}label{display:block;margin:16px 0 7px;font-weight:600}input[type=text],input[type=time],input[type=date]{width:100%;padding:12px;border:1px solid #e5bdca;border-radius:12px}.days{display:flex;gap:4px;justify-content:space-between}.days label{margin:0;font-weight:normal}.days input{position:absolute;opacity:0}.days span{display:inline-block;padding:9px;border-radius:12px;background:#f7e9ed}.days input:checked+span{background:#e96c98;color:white}.actions{display:flex;gap:10px;justify-content:flex-end;margin-top:22px}.secondary{border:0;background:#f5e9ed;border-radius:14px;padding:10px 16px}.notice{color:#a12450;font-weight:bold}.error{color:#ae2537}@media(max-width:400px){.day{min-height:55px}.hero img{width:40%}}
  .item .item-action{width:auto;height:auto;border:0;border-radius:8px;background:#f8e8ee;color:#804355;padding:7px;font-size:.85rem}.sectionhead>div{display:flex;gap:6px}.primary:disabled{opacity:.55}
+
+/* Keep calendar dates and multiple entries readable on narrow screens. */
+.grid { align-items: stretch; }
+.day {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  height: 220px;
+  min-height: 220px;
+  padding: 6px 3px;
+  overflow: hidden;
+  text-align: left;
+}
+.day > span { display: block; text-align: center; margin-bottom: 5px; }
+.day small {
+  display: -webkit-box;
+  flex: none;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  white-space: normal;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  line-height: 1.25;
+  font-size: .7rem;
+  margin-bottom: 3px;
+}
+@media (max-width: 400px) {
+  .day { min-height: 220px; }
+  .calendar-panel { padding: 14px 8px; }
+  .grid { gap: 2px; }
+}
