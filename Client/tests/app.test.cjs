@@ -129,3 +129,41 @@ test('사용자 입력의 HTML 특수 문자를 화면에 안전하게 표시한
   assert.match(app.html(), /&lt;img onerror=alert\(1\)&gt;/);
   assert.doesNotMatch(app.html(), /<img onerror/);
 });
+
+test('Phase 1 데이터에 일정 목록이 없어도 기존 보상과 육성을 보존한다', () => {
+  const old = {routines: [], todos: [], completions: [], rewards: ['routine:a:2026-11-16'], food: 2, pet: 'hatched', fed: 3};
+  const app = startApp('2026-11-16T09:00:00', {'time-manager-v1': JSON.stringify(old)});
+  app.run("change(s=>s.events.push({id:'e',name:'약속',color:'#111111',startDate:'2026-11-16',endDate:'2026-11-16',allDay:true}));");
+  assert.equal(app.state().events[0].name, '약속');
+  assert.equal(app.state().food, 2);
+  assert.equal(app.state().fed, 3);
+  assert.equal(app.state().rewards.length, 1);
+});
+
+test('시간 지정 일정의 자정 종료와 종일 일정의 종료일을 구분한다', () => {
+  const app = startApp();
+  assert.equal(app.run("eventOnDate({startDate:'2026-11-30',endDate:'2026-12-01',allDay:false,endTime:'00:00'},'2026-11-30')"), true);
+  assert.equal(app.run("eventOnDate({startDate:'2026-11-30',endDate:'2026-12-01',allDay:false,endTime:'00:00'},'2026-12-01')"), false);
+  assert.equal(app.run("eventOnDate({startDate:'2026-11-30',endDate:'2026-12-01',allDay:true},'2026-12-01')"), true);
+});
+
+test('완료를 취소하고 다시 완료해도 기존 보상을 중복 지급하지 않는다', () => {
+  const app = startApp();
+  app.run("change(s=>{s.routines.push({id:'a',name:'루틴',when:'아침',days:[1]});s.todos.push({id:'t',name:'할 일',date:'2026-11-17',time:'10:00',color:'#d84d79'});}); complete('routine','a');complete('todo','t');feed();toggleComplete('routine','a');toggleComplete('todo','t');");
+  assert.equal(app.state().completions.length, 0);
+  assert.equal(app.state().todos[0].completedAt, null);
+  app.run("toggleComplete('routine','a');toggleComplete('todo','t');");
+  assert.equal(app.state().rewards.length, 2);
+  assert.equal(app.state().pet, 'hatched');
+  assert.equal(app.state().food, 0);
+});
+
+test('완료 취소 저장 실패 시 완료와 보상을 유지한다', () => {
+  const app = startApp();
+  app.run("change(s=>s.routines.push({id:'a',name:'운동',when:'아침',days:[1]}));complete('routine','a');");
+  const before = app.stored['time-manager-v1'];
+  app.failWrites();
+  app.run("toggleComplete('routine','a')");
+  assert.equal(app.stored['time-manager-v1'], before);
+  assert.match(app.html(), /저장하지 못했습니다/);
+});
