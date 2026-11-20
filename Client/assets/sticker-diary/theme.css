@@ -1,0 +1,19 @@
+@font-face {
+  font-family: Jua;
+  src: url("./Jua-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --font-title: Jua, system-ui, sans-serif;
+  --font-body: system-ui, sans-serif;
+  --color-paper: #fff8ee;
+  --color-text: #492520;
+  --color-pink: #f7a3bf;
+  --color-pink-ink: #9f2853;
+  --color-sky: #a9dbfb;
+  --color-sky-ink: #244b72;
+  --color-completed: #746862;
+}
