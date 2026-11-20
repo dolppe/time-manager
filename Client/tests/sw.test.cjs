@@ -21,7 +21,7 @@ function startWorker({ failInstall = false } = {}) {
   };
   const caches = {
     async open(name) { calls.push(['open', name]); return cache; },
-    async keys() { return ['time-manager-v1', 'time-manager-v2', 'time-manager-v5', 'time-manager-v6', 'another-app']; },
+    async keys() { return ['time-manager-v1', 'time-manager-v2', 'time-manager-v5', 'time-manager-v6', 'time-manager-v7', 'another-app']; },
     async delete(name) { calls.push(['delete', name]); },
   };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../sw.js'), 'utf8'), {
@@ -52,7 +52,7 @@ test('활성화 시 이전 앱 캐시만 정리하고 현재 창에 적용한다
   let pending;
   worker.handlers.activate({ waitUntil(promise) { pending = promise; } });
   await pending;
-  assert.deepEqual(worker.calls.filter(call => call[0] === 'delete').map(call => call[1]), ['time-manager-v1', 'time-manager-v2', 'time-manager-v5']);
+  assert.deepEqual(worker.calls.filter(call => call[0] === 'delete').map(call => call[1]), ['time-manager-v1', 'time-manager-v2', 'time-manager-v5', 'time-manager-v6']);
   assert.equal(worker.calls.at(-1)[0], 'claim');
 });
 
@@ -61,5 +61,5 @@ test('요청은 현재 버전 캐시에서 조회한다', async () => {
   let response;
   worker.handlers.fetch({ request: { method: 'GET', url: 'app.js' }, respondWith(promise) { response = promise; } });
   assert.equal(await response, 'cached response');
-  assert.deepEqual(worker.calls[0], ['open', 'time-manager-v6']);
+  assert.deepEqual(worker.calls[0], ['open', 'time-manager-v7']);
 });
