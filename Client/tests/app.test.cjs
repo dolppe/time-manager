@@ -209,3 +209,24 @@ test('완료 취소 저장 실패 시 완료와 보상을 유지한다', () => {
   assert.equal(app.stored['time-manager-v1'], before);
   assert.match(app.html(), /저장하지 못했습니다/);
 });
+
+
+test('먹이 다섯 번째에 성장하고 기존 기록과 저장 실패를 보존한다', () => {
+  const app = startApp();
+  app.run("change(s => { s.pet='hatched'; s.fed=3; s.food=3; }); render(); feed();");
+  assert.match(app.html(), /성장까지 먹이 1회/);
+  app.run('feed()');
+  assert.match(app.html(), /성장 완료/);
+  assert.match(app.html(), /axolotl-grown.png/);
+  const reopened = startApp(undefined, app.stored);
+  assert.match(reopened.html(), /성장 완료/);
+  reopened.run('feed()');
+  assert.equal(reopened.state().fed, 6);
+  const failed = startApp();
+  failed.run("change(s => { s.pet='hatched'; s.fed=4; s.food=1; });");
+  failed.failWrites();
+  failed.run('feed()');
+  assert.equal(failed.state().fed, 4);
+  assert.equal(failed.state().food, 1);
+  assert.match(failed.html(), /저장하지 못했습니다/);
+});
