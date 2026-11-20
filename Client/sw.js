@@ -1,5 +1,5 @@
-const CACHE = 'time-manager-v4';
-const FILES = ['./','./index.html','./style.css','./app.js','./manifest.webmanifest','./assets/sticker-diary/theme.css','./assets/sticker-diary/Jua-Regular.ttf','./assets/sticker-diary/egg.png','./assets/sticker-diary/axolotl.png'];
+const CACHE = 'time-manager-v5';
+const FILES = ['./','./index.html','./style.css','./app.js','./manifest.webmanifest','./assets/sticker-diary/theme.css','./assets/sticker-diary/Jua-Regular.ttf','./assets/sticker-diary/egg.png','./assets/sticker-diary/axolotl.png', './assets/sticker-diary/axolotl-grown.png'];
 self.addEventListener('install', event => {
  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(FILES)).then(() => self.skipWaiting()));
 });
